@@ -2,20 +2,27 @@
     Scripted by Vero Morera, December 2017.
     veromc1692@gmail.com
 
-Instructions:
 ---------------------------------------------------------------------------------
+To call the main UI:
+***************************************
+import VM_FkGenerator as vmfk
+reload (vmfk)
+vmfk.UI()
+***************************************
+Instructions:
     1-Select one or more joints to create an FK for them...
     2- Choose the size of your controllers.
     3- Choose the suffix of the controller.
     4- Choose the color of your controllers.
     5- Click on the "Generate FKs"button.
+   
 ---------------------------------------------------------------------------------
 """
 import maya.cmds as mc
 import maya.OpenMaya as om
 
 WIN = "FkWin"
-RGB = (1, 0.2, 0.5)  #This is my default pink color for the UI. Used in code line: 33
+RGB = (1, 0.2, 0.5)  #This is my default pink color for the UI. Used in code line: 41
 
 def UI():
 # Window Creation
@@ -47,7 +54,7 @@ def MainFK(*args):
     con_radius = mc.floatSliderGrp("consize", query=True, value=True)
     con_suff = mc.textFieldGrp("suf", query=True, text=True)
     con_color = mc.colorSliderGrp("color", query=True, rgb=True)
-    a, b, c = con_color  #This is my way of decomposing RGB colors for the overrideColorRGB, code line: 65
+    a, b, c = con_color  #This is my way of decomposing RGB colors for the overrideColorRGB, code line: 73
     sel = mc.ls(sl=True)
     previous_sel = None
 
