@@ -56,7 +56,6 @@ def IKhandle(*args):
     joints = mc.ls(sl=True)
     scaleNormalize = mc.textFieldButtonGrp("globalCC", query=True, text=True)
     mc.select(cl=True)
-###-------------------------------------------------------------------------------------------------------------###
 
     if len(joints) <= 1:
         om.MGlobal.displayError("Please select at least 2 joints")
@@ -125,7 +124,7 @@ def IKhandle(*args):
         # normalize rig
         if mc.textFieldButtonGrp("globalCC", query=True, text=True):
             mc.connectAttr((scaleNormalize + ".scaleY"), (normalize_div + ".input2.input2X"))
-            om.MGlobal.displayInfo("Your FK Control Chain has been created with success!")
+            om.MGlobal.displayInfo("Your squash - stretch IKspline has been created with success!")
 
         else:
             pass
