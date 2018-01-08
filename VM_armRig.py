@@ -318,7 +318,7 @@ def L_arm(*args):
             mc.connectAttr("L_arm_REV.outputX", "{}.v".format(ikcc_off))
             mc.connectAttr("L_arm_REV.outputX", "{}.v".format(ikpv_off))
             #
-            mc.group(jj[0], fkhi, n="L_arm_GRP")
+            mc.group(jj[0], grp, n="L_arm_GRP")
             mc.parent(ikpv_off, ikcc_off, "IK_GRP")
             mc.hide(ik[0], fk[0], IKRP[0])
             #
@@ -381,7 +381,7 @@ def L_arm(*args):
             mc.connectAttr("L_arm_REV.outputX", "{}.v".format(ikcc_off))
             mc.connectAttr("L_arm_REV.outputX", "{}.v".format(ikpv_off))
             #
-            mc.group(jj[0], fkhi, n="L_arm_GRP")
+            mc.group(jj[0], grp, n="L_arm_GRP")
             mc.group(ikpv_off, ikcc_off, ikfk_off, n="IK_GRP")
             mc.hide(ik[0], fk[0], IKRP[0])
 
@@ -389,7 +389,7 @@ def L_arm(*args):
             om.MGlobal.displayInfo("Your arm rig has been created with success!")
 
         else:
-            mc.group(jj[0], fkhi, n="L_arm_GRP")
+            mc.group(jj[0], grp, n="L_arm_GRP")
             mc.group(ikpv_off, ikcc_off, n="IK_GRP")
             mc.hide(ik[0], fk[0], IKRP[0])
             #
@@ -648,7 +648,7 @@ def L_arm(*args):
                     mc.connectAttr("R_arm_REV.outputX", "{}.v".format(ikcc_off))
                     mc.connectAttr("R_arm_REV.outputX", "{}.v".format(ikpv_off))
                     #
-                    mc.group(rjj[0], fkhi, n="R_arm_GRP")
+                    mc.group(rjj[0], grp, n="R_arm_GRP")
                     mc.parent(ikpv_off, ikcc_off, "IK_GRP")
                     mc.hide(rik[0], rfk[0], IKRP[0])
                     #
@@ -672,7 +672,7 @@ def L_arm(*args):
                     mc.connectAttr("R_arm_REV.outputX", "{}.v".format(ikcc_off))
                     mc.connectAttr("R_arm_REV.outputX", "{}.v".format(ikpv_off))
                     #
-                    mc.group(rjj[0], fkhi, n="R_arm_GRP")
+                    mc.group(rjj[0], grp, n="R_arm_GRP")
                     mc.parent(ikpv_off, ikcc_off, ikfk_off, "IK_GRP")
                     mc.hide(rik[0], rfk[0], IKRP[0])
 
@@ -680,7 +680,7 @@ def L_arm(*args):
                     om.MGlobal.displayInfo("Your arm rig has been created with success!")
 
                 else:
-                    mc.group(rjj[0], fkhi, n="R_arm_GRP")
+                    mc.group(rjj[0], grp, n="R_arm_GRP")
                     mc.parent(ikpv_off, ikcc_off, "IK_GRP")
                     mc.hide(rik[0], rfk[0], IKRP[0])
                     #
