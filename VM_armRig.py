@@ -42,7 +42,7 @@ def L_arm(*args):
     previous_sel = None
 
     if len(origArm) < 4:
-        om.MGlobal.displayError("Please select the entire leg. (exactly 4 joints)")
+        om.MGlobal.displayError("Please select the entire arm. (exactly 4 joints)")
 
     elif len(origArm) > 4:
         om.MGlobal.displayError("Please select just 4 joints!")
