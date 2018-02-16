@@ -17,7 +17,7 @@ def UI():
     mc.columnLayout()
     mc.text('1- Write the full blendshape name you want to connect. Example: BS.smile, BS.sad')
     mc.text('2- Write the name of the control')
-    mc.text('3- Be carefull with your ortography!!')
+    mc.text('3- Be careful with your ortography!!')
     mc.separator(h=20)
     mc.textFieldGrp('blend1', label='Positive blendshape.', text='')
     mc.textFieldGrp('blend2', label='Negative blendshape.', text='')
