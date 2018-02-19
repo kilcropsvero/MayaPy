@@ -64,20 +64,22 @@ def MainFK(*args):
     else:
         for s in sel:
         # Create controllers and offsets for each joint
-            ctrls = mc.circle(nr= (1, 0, 0), n= str(s + con_suff), radius= con_radius)
+            ctrls = mc.circle(nr=(1, 0, 0), n=str(s + con_suff), radius=con_radius)
             mc.makeIdentity(apply=True)
-            offset = mc.group(n=str("grp" + s.capitalize() + "_ZERO"))
-        #Define the color for the controller
-            mc.setAttr (offset + ".overrideEnabled", 1)
+            offset = mc.group(n=str("grp" + s.capitalize() + "_ZERO"), empty=True)
+        # Define the color for the controller
+            mc.setAttr(offset + ".overrideEnabled", 1)
             mc.setAttr(offset + ".overrideRGBColors", 1)
             mc.setAttr(offset + ".overrideColorRGB", a, b, c)
-        # Copy the position and orientation of the joints to the controllers
-            temp_constraint= mc.parentConstraint(s, ctrls, maintainOffset=0)
+        # ZeroOut
+            temp_constraint = mc.parentConstraint(s, offset, maintainOffset=0)
             mc.delete(temp_constraint)
-        #Make an orient constraint from the controllers to the joints to drive them.
+            mc.parent(ctrls, offset)
+            mc.setAttr("{}.translate".format(ctrls[0]), 0, 0, 0)
+            mc.setAttr("{}.rotate".format(ctrls[0]), 0, 0, 0)
+        # Make an orient constraint from the controllers to the joints to drive them.
             mc.orientConstraint(ctrls, s)
-
-        #If there is more than one control, parent them in FK hierarchy:
+        # If there is more than one control, parent them in FK hierarchy:
             if previous_sel:
                 mc.parent(offset, previous_sel)
             previous_sel = ctrls
