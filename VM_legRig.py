@@ -1,6 +1,6 @@
 """
 Version 1 made in January 2018 (week # 1): Leg Rig in basic python
-Scripted by Vero Morera. 
+Scripted by Vero Morera.
 veromc1692@gmail.com
 """
 
@@ -65,7 +65,9 @@ def L_leg(*args):
         mc.rename(dup[0], "RFL_L_ankle_JC")
         mc.rename(dup[1], "RFL_L_ball_JC")
         mc.rename(dup[2], "RFL_L_toe_JC")
-        heel = mc.joint(n="RFL_L_heel_JC", p=(0, 0, 0))
+        heel = mc.joint(n="RFL_L_heel_JC")
+        temp= mc.pointConstraint("temp_heel", heel)
+        mc.delete(temp, "temp_heel")
         toetap = mc.joint(n="RFL_L_toeTap_JC")
         tempPoint = mc.pointConstraint("RFL_L_ball_JC", toetap)
         mc.delete(tempPoint)
@@ -85,7 +87,7 @@ def L_leg(*args):
             mc.mirrorJoint(mirrorYZ=True, mirrorBehavior=True, searchReplace=("_L_", "_R_"))
             R_RFL = mc.ls(sl=True)
     # (END OF THE RIGHT LEG)
-            
+
     # IK RIG
         # Create and rename the ik chain:
         IkChain = mc.duplicate(jj[0], renameChildren=True)
@@ -112,7 +114,7 @@ def L_leg(*args):
         mc.parent(IKSC_2[0], "RFL_L_toeTap_JC")
 
         # Create Controlers
-        ikcc = mc.circle(n="L_foot_CC", c=(0, 0, 0), nr=(0, 1, 0), constructionHistory=False)
+        ikcc = mc.circle(n="L_foot_CC", c=(0, 0, 0), nr=(0, 1, 0), r=2, constructionHistory=False)
         mc.hilite(ikcc)
         mc.select("{}.cv[0:2]".format(ikcc[0]), r=True)
         mc.move(0, 0, -0.429197, r=True, wd=True)
@@ -125,6 +127,9 @@ def L_leg(*args):
         tempPoint = mc.pointConstraint(ik[2], ikcc, maintainOffset=0)
         mc.delete(tempPoint)
         temp_pos = mc.xform(ikcc, translation=True, query=True, worldSpace=True)
+        mc.hilite(ikcc[0])
+        mc.select("{}.cv[0:7]".format(ikcc[0]))
+        mc.move(0, -2, 1.6, r=True, wd=True)
 
         # ZeroOut ikcc
         ikcc_off = mc.group(ikcc, n="grpL_foot_CCZERO")
@@ -144,13 +149,22 @@ def L_leg(*args):
         mc.delete(temp_constraint)
         mc.poleVectorConstraint(ikpv, IKRP[0], weight=1, )
         temp_pos2 = mc.xform(ikpv, translation=True, query=True, worldSpace=True)
+        # Anotation
+        kneePos = mc.xform(ik[1], ws=True, translation=True, q=True)
+        LlegAnnot = mc.annotate(ikpv, p=(kneePos[0], kneePos[1], kneePos[2]))
+        mc.parent(LlegAnnot, "L_knee_JJ")
+        mc.setAttr("{}.overrideEnabled" .format(LlegAnnot), 1)
+        mc.setAttr("{}.overrideDisplayType" .format(LlegAnnot), 2)
+        mc.setAttr("{}.overrideDisplayType" .format(LlegAnnot), 1)
 
         # ZeroOut ikpv
         ikpv_off = mc.group(ikpv, n= "grpL_leg_PVZERO")
         mc.setAttr("{}.overrideEnabled".format(ikpv_off), 1)
         mc.setAttr("{}.overrideColor".format(ikpv_off), 6)
         mc.xform(ikpv_off, worldSpace=True, translation=(temp_pos2[0], temp_pos2[1], temp_pos2[2]))
-        mc.setAttr("{}.translate".format(ikpv), 0, 0, 5)
+        mc.setAttr("{}.translate".format(ikpv), 0, 0, 0)
+        mc.xform(ikpv_off, cpc=1)
+        mc.move(0, 0, 15, ikpv_off, r=True)
         #
         mc.setAttr("L_leg_PV.rx", lock=True, keyable=False, channelBox=False)
         mc.setAttr("L_leg_PV.ry", lock=True, keyable=False, channelBox=False)
@@ -227,6 +241,42 @@ def L_leg(*args):
         PC4 = mc.parentConstraint(ik[3], fk[3], jj[3], mo=1)
         PC5 = mc.parentConstraint(ik[4], fk[4], jj[4], mo=1)
 
+        #Stretchy Leg
+        startPos= mc.xform(ik[0], translation=True, q=True, ws=True)
+        endPos= mc.xform(ik[2], translation=True, q=True, ws=True)
+        L_dist = mc.distanceDimension(sp=(startPos[0], startPos[1], startPos[2]),
+                                      ep=(endPos[0], endPos[1], endPos[2]))
+        distLoc= mc.listConnections(L_dist)
+        distShape= mc.listConnections(shapes=True)
+        mc.pointConstraint(ik[0], distLoc[0])
+        mc.parent(distLoc[1], ikcc[0])
+        mc.rename(distLoc[0], "L_stretchyLeg_01_LOC")
+        mc.rename(distLoc[1], "L_stretchyLeg_02_LOC")
+        #
+        div= mc.shadingNode("multiplyDivide", asUtility=True, name="L_leg_stretchy_DIV")
+        normalizeDiv = mc.shadingNode("multiplyDivide", asUtility=True, name="L_leg_normalize_DIV")
+        con= mc.shadingNode("condition", asUtility=True, name="L_leg_CON")
+        mc.setAttr(div + ".operation", 2)
+        mc.setAttr(normalizeDiv + ".operation", 2)
+        mc.setAttr(con + ".operation", 2)
+        secondTerm = mc.getAttr("{}.distance".format(L_dist))
+        mc.setAttr("{}.secondTerm" .format(con), secondTerm)
+        mc.setAttr("{}.input2X" .format(div), secondTerm)
+        mc.connectAttr("{}.outColorR" .format(con), "{}.input1X" .format(div))
+        mc.connectAttr("{}.distance" .format(distShape[0]), "{}.input1X" .format(normalizeDiv))
+        mc.connectAttr("{}.scaleY".format("root_CC"), "{}.input2X" .format(normalizeDiv))
+        mc.connectAttr("{}.outputX".format(normalizeDiv), "{}.secondTerm".format(con))
+        mc.connectAttr("{}.outputX".format(normalizeDiv), "{}.colorIfFalseR".format(con))
+        firstTerm = mc.getAttr("{}.distance" .format(L_dist))
+        mc.setAttr("{}.firstTerm".format(con), firstTerm)
+        mc.setAttr("{}.colorIfTrueR".format(con), firstTerm)
+        mc.connectAttr("{}.outputX" .format(div), "{}.sx" .format(ik[0]))
+        mc.connectAttr("{}.outputX" .format(div), "{}.sx".format(ik[1]))
+
+        stretchGRP= mc.group("L_stretchyLeg_01_LOC", L_dist, n="stretchy_GRP")
+        mc.hide("L_stretchyLeg_02_LOC")
+
+
         if mc.radioButton("ikfkcc", query=True, select=True):
 
             #Create IK FK control
@@ -252,8 +302,9 @@ def L_leg(*args):
             sel = mc.rename(v1, "IK_FK_SWITCH")
             ikfk_off= mc.group(sel, name= "grpIK_FK_SWITCHZERO")
             mc.setAttr("{}.overrideEnabled".format(ikfk_off), 1)
-            mc.setAttr("{}.overrideColor".format(ikfk_off), 9)
+            mc.setAttr("{}.overrideColor".format(ikfk_off), 16)
             ikfkSwitch = mc.ls(sel)
+            mc.move( 0, 0, 4, r=True, wd=True)
             #
             mc.addAttr(sel, longName='L_leg_IK_FK', defaultValue=0, minValue=0, maxValue=1, keyable=True)
             mc.addAttr(sel, longName='R_leg_IK_FK', defaultValue=0, minValue=0, maxValue=1, keyable=True)
@@ -288,14 +339,22 @@ def L_leg(*args):
             mc.connectAttr( "L_leg_REV.outputX", "{}.v".format(ikcc_off) )
             mc.connectAttr("L_leg_REV.outputX", "{}.v".format(ikpv_off))
             #
-            mc.group(jj[0], ik[0], fk[0], fkhi, n="L_leg_GRP")
+            grp = mc.group(n="L_leg_GRP", empty=True)
+            temp = mc.pointConstraint(jj[0], grp)
+            mc.delete(temp)
+            mc.parent(jj[0], ik[0], fk[0], fkhi, grp)
+
             mc.group(ikpv_off, ikcc_off, ikfk_off, n="IK_GRP")
-            mc.hide(ik[0], fk[0], RFL)
+            mc.parent(stretchGRP, "IK_GRP")
+            mc.hide(ik[0], fk[0], RFL, stretchGRP)
             #
             om.MGlobal.displayInfo("Your leg rig has been created with success!")
 
         else:
-            mc.group(jj[0], ik[0], fk[0], fkhi, n="L_leg_GRP")
+            grp= mc.group(n="L_leg_GRP", empty=True)
+            temp= mc.pointConstraint(jj[0], grp)
+            mc.delete(temp)
+            mc.parent(jj[0], ik[0], fk[0], fkhi, grp)
             mc.group(ikpv_off, ikcc_off, n="IK_GRP")
             mc.hide(ik[0], fk[0], RFL)
             #
@@ -347,6 +406,9 @@ def L_leg(*args):
                 tempPoint = mc.pointConstraint(rik[2], ikcc, maintainOffset=0)
                 mc.delete(tempPoint)
                 temp_pos = mc.xform(ikcc, translation=True, query=True, worldSpace=True)
+                mc.hilite(ikcc[0])
+                mc.select("{}.cv[0:7]".format(ikcc[0]))
+                mc.move(0, -2, 1.6, r=True, wd=True)
 
                 # ZeroOut ikcc
                 ikcc_off = mc.group(ikcc, n="grpR_foot_CCZERO")
@@ -366,13 +428,22 @@ def L_leg(*args):
                 mc.delete(temp_constraint)
                 mc.poleVectorConstraint(ikpv, IKRP[0], weight=1, )
                 temp_pos2 = mc.xform(ikpv, translation=True, query=True, worldSpace=True)
+                #Anotation
+                kneePos= mc.xform(rik[1], ws=True, translation=True, q=True)
+                RlegAnnot = mc.annotate(ikpv, p=(kneePos[0], kneePos[1], kneePos[2]))
+                mc.parent(RlegAnnot, "R_knee_JJ")
+                mc.setAttr("{}.overrideEnabled" .format(RlegAnnot), 1)
+                mc.setAttr("{}.overrideDisplayType" .format(RlegAnnot), 2)
+                mc.setAttr("{}.overrideDisplayType" .format(RlegAnnot), 1)
 
                 # ZeroOut ikpv
                 ikpv_off = mc.group(ikpv, n="grpR_leg_PVZERO")
                 mc.setAttr("{}.overrideEnabled".format(ikpv_off), 1)
                 mc.setAttr("{}.overrideColor".format(ikpv_off), 13)
                 mc.xform(ikpv_off, worldSpace=True, translation=(temp_pos2[0], temp_pos2[1], temp_pos2[2]))
-                mc.setAttr("{}.translate".format(ikpv), 0, 0, 5)
+                mc.setAttr("{}.translate".format(ikpv), 0, 0, 0)
+                mc.xform(ikpv_off, cpc=1)
+                mc.move(0, 0, 15, ikpv_off, r=True)
                 #
                 mc.setAttr("R_leg_PV.rx", lock=True, keyable=False, channelBox=False)
                 mc.setAttr("R_leg_PV.ry", lock=True, keyable=False, channelBox=False)
@@ -413,7 +484,7 @@ def L_leg(*args):
                 rfk = mc.ls(sl=True)
 
                 for j in rfk:
-                    cc = mc.circle(nr=(1, 0, 0), n=str(j) + "_CC", constructionHistory=False)
+                    cc = mc.circle(nr=(1, 0, 0), n=str(j) + "_CC", r=2, constructionHistory=False)
                     mc.makeIdentity(apply=True)
                     temp_constraint = mc.parentConstraint(j, cc, maintainOffset=0)
                     mc.delete(temp_constraint)
@@ -448,6 +519,42 @@ def L_leg(*args):
                 PC4 = mc.parentConstraint(rik[3], rfk[3], rjj[3], mo=1)
                 PC5 = mc.parentConstraint(rik[4], rfk[4], rjj[4], mo=1)
 
+                # Stretchy Leg
+                startPos = mc.xform(rik[0], translation=True, q=True, ws=True)
+                endPos = mc.xform(rik[2], translation=True, q=True, ws=True)
+                R_dist = mc.distanceDimension(sp=(startPos[0], startPos[1], startPos[2]),
+                                              ep=(endPos[0], endPos[1], endPos[2]))
+                distLoc = mc.listConnections(R_dist)
+                distShape = mc.listConnections(shapes=True)
+                mc.pointConstraint(rik[0], distLoc[0])
+                mc.parent(distLoc[1], ikcc[0])
+                mc.rename(distLoc[0], "R_stretchyLeg_01_LOC")
+                mc.rename(distLoc[1], "R_stretchyLeg_02_LOC")
+                #
+                div = mc.shadingNode("multiplyDivide", asUtility=True, name="R_leg_stretchy_DIV")
+                normalizeDiv = mc.shadingNode("multiplyDivide", asUtility=True, name="R_leg_normalize_DIV")
+                con = mc.shadingNode("condition", asUtility=True, name="R_leg_CON")
+                mc.setAttr(div + ".operation", 2)
+                mc.setAttr(normalizeDiv + ".operation", 2)
+                mc.setAttr(con + ".operation", 2)
+                secondTerm = mc.getAttr("{}.distance".format(R_dist))
+                mc.setAttr("{}.secondTerm".format(con), secondTerm)
+                mc.setAttr("{}.input2X".format(div), secondTerm)
+                mc.connectAttr("{}.outColorR".format(con), "{}.input1X".format(div))
+                mc.connectAttr("{}.distance".format(distShape[0]), "{}.input1X".format(normalizeDiv))
+                mc.connectAttr("{}.scaleY".format("root_CC"), "{}.input2X".format(normalizeDiv))
+                mc.connectAttr("{}.outputX".format(normalizeDiv), "{}.secondTerm".format(con))
+                mc.connectAttr("{}.outputX".format(normalizeDiv), "{}.colorIfFalseR".format(con))
+                firstTerm = mc.getAttr("{}.distance".format(L_dist))
+                mc.setAttr("{}.firstTerm".format(con), firstTerm)
+                mc.setAttr("{}.colorIfTrueR".format(con), firstTerm)
+                mc.connectAttr("{}.outputX".format(div), "{}.sx".format(rik[0]))
+                mc.connectAttr("{}.outputX".format(div), "{}.sx".format(rik[1]))
+                #
+                mc.parent("R_stretchyLeg_01_LOC", R_dist, "stretchy_GRP")
+                mc.hide("R_stretchyLeg_02_LOC")
+
+
                 if mc.radioButton("ikfkcc", query=True, select=True):
 
                     # Switch IK-FK
@@ -470,14 +577,21 @@ def L_leg(*args):
                     mc.connectAttr("R_leg_REV.outputX", "{}.v".format(ikcc_off))
                     mc.connectAttr("R_leg_REV.outputX", "{}.v".format(ikpv_off))
                     #
-                    mc.group(rjj[0], rik[0], rfk[0], fkhi, n="R_leg_GRP")
+                    grp = mc.group(n="R_leg_GRP", empty=True)
+                    temp = mc.pointConstraint(rjj[0], grp)
+                    mc.delete(temp)
+                    mc.parent(rjj[0], rik[0], rfk[0], fkhi, grp)
                     mc.parent(ikpv_off, ikcc_off, ikfk_off, "IK_GRP")
                     mc.hide(rik[0], rfk[0], R_RFL)
                     #
+
                     om.MGlobal.displayInfo("Your right leg rig has been mirrored with success!")
 
                 else:
-                    mc.group(rjj[0], rik[0], rfk[0], fkhi, n="R_leg_GRP")
+                    grp = mc.group(n="R_leg_GRP", empty=True)
+                    temp = mc.pointConstraint(rjj[0], grp)
+                    mc.delete(temp)
+                    mc.parent(rjj[0], rik[0], rfk[0], fkhi, grp)
                     mc.parent(ikpv_off, ikcc_off, "IK_GRP")
                     mc.hide(rik[0], rfk[0], R_RFL)
                     #
