@@ -483,5 +483,3 @@ def L_leg(*args):
                     #
                     om.MGlobal.displayWarning("There was no IK_FK control, Switching skipped!")
             R_LEG()
-
-        else:
