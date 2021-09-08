@@ -1,0 +1,45 @@
+'''
+script para hacer escala inversa de rigs para videojuegos!
+Evita problemas de escala no uniforme en rigs de unity y unreal
+Escrito por Vero Morera 
+set 2021
+'''
+
+import maya.cmds as mc
+
+
+#definir los chains de ambos esqueletos a mano
+origChain = mc.ls(sl=1)
+exportChain = mc.ls(sl=1)
+
+
+#contador
+n=0
+
+#crear los nodos de escala inversa y conectar
+
+for a, b in zip(origChain, exportChain):
+    
+    n=n+1
+    
+    #ignore unicode
+    a.encode('ascii', 'ignore')
+    b.encode('ascii', 'ignore')
+    
+    #crear los nodos de escala
+    inverseScaleDiv = mc.createNode('multiplyDivide', n='inverseScaleDiv0' + str(n))
+    mc.setAttr(inverseScaleDiv + '.operation', 2)
+    mc.setAttr(inverseScaleDiv + '.input1X', 1)
+    mc.setAttr(inverseScaleDiv + '.input1Y', 1)
+    mc.setAttr(inverseScaleDiv + '.input1Z', 1)
+    
+    
+    applyScaleMult = mc.createNode('multiplyDivide', n='applyScaleMult0' + str(n))
+    mc.setAttr(applyScaleMult + '.operation' , 1)
+    
+    #conectar nodos con joints
+
+    mc.connectAttr(a + '.inverseScale', inverseScaleDiv + '.input2')
+    mc.connectAttr(inverseScaleDiv + '.output', applyScaleMult + '.input1')
+    mc.connectAttr(a + '.scale', applyScaleMult + '.input2')
+    mc.connectAttr(applyScaleMult + '.output', b + '.scale')
