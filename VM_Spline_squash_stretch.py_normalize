@@ -1,0 +1,169 @@
+import maya.cmds as cmds
+
+
+def buildStretchy():
+
+    firstJoint = cmds.textField("firstJointField", q=True, text=True)
+    lastJoint = cmds.textField("lastJointField", q=True, text=True)
+    curveTransform = cmds.textField("curveField", q=True, text=True)
+    rootCtrl = cmds.textField("rootField", q=True, text=True)
+
+    if not cmds.objExists(firstJoint) or not cmds.objExists(lastJoint) or not cmds.objExists(curveTransform):
+        cmds.warning("Algún objeto no existe.")
+        return
+
+    shape = cmds.listRelatives(curveTransform, shapes=True)[0]
+
+    setupName = curveTransform.replace("_cv", "")
+
+    # curveInfo
+    curveInfo = cmds.createNode("curveInfo", n=curveTransform + "_info")
+    cmds.connectAttr(shape + ".worldSpace[0]", curveInfo + ".inputCurve")
+
+    baseLength = cmds.getAttr(curveInfo + ".arcLength")
+
+    # stretchy divide
+    stretchDivide = cmds.createNode(
+        "multiplyDivide",
+        n=setupName + "_stretchy_divide"
+    )
+
+    cmds.setAttr(stretchDivide + ".operation", 2)
+
+    # NORMALIZE NODE (opcional)
+    if rootCtrl and cmds.objExists(rootCtrl):
+
+        normalize = cmds.createNode(
+            "multiplyDivide",
+            n=setupName + "_normalize_divide"
+        )
+
+        cmds.setAttr(normalize + ".operation", 2)
+
+        cmds.connectAttr(curveInfo + ".arcLength", normalize + ".input1X")
+        cmds.connectAttr(rootCtrl + ".scaleY", normalize + ".input2X")
+
+        cmds.connectAttr(normalize + ".outputX", stretchDivide + ".input1X")
+
+    else:
+
+        cmds.connectAttr(curveInfo + ".arcLength", stretchDivide + ".input1X")
+
+    cmds.setAttr(stretchDivide + ".input2X", baseLength)
+
+    # inverse power
+    inversePower = cmds.createNode(
+        "multiplyDivide",
+        n=setupName + "_inverse_power"
+    )
+
+    cmds.setAttr(inversePower + ".operation", 3)
+
+    cmds.connectAttr(stretchDivide + ".outputX", inversePower + ".input1X")
+    cmds.setAttr(inversePower + ".input2X", 0.5)
+
+    # squash divide
+    squashDivide = cmds.createNode(
+        "multiplyDivide",
+        n=setupName + "_squash_divide"
+    )
+
+    cmds.setAttr(squashDivide + ".operation", 2)
+
+    cmds.setAttr(squashDivide + ".input1X", 1)
+    cmds.connectAttr(inversePower + ".outputX", squashDivide + ".input2X")
+
+    # obtener cadena de joints
+    joints = []
+    current = firstJoint
+
+    while current:
+
+        joints.append(current)
+
+        if current == lastJoint:
+            break
+
+        children = cmds.listRelatives(current, type="joint")
+
+        if children:
+            current = children[0]
+        else:
+            break
+
+    # conectar joints
+    for j in joints[:-1]:
+
+        cmds.connectAttr(stretchDivide + ".outputX", j + ".scaleX")
+
+        cmds.connectAttr(squashDivide + ".outputX", j + ".scaleY")
+        cmds.connectAttr(squashDivide + ".outputX", j + ".scaleZ")
+
+    print("Stretchy setup creado.")
+
+
+def loadFirstJoint():
+    sel = cmds.ls(sl=True)
+    if sel:
+        cmds.textField("firstJointField", e=True, text=sel[0])
+
+
+def loadLastJoint():
+    sel = cmds.ls(sl=True)
+    if sel:
+        cmds.textField("lastJointField", e=True, text=sel[0])
+
+
+def loadCurve():
+    sel = cmds.ls(sl=True)
+    if sel:
+        cmds.textField("curveField", e=True, text=sel[0])
+
+
+def loadRoot():
+    sel = cmds.ls(sl=True)
+    if sel:
+        cmds.textField("rootField", e=True, text=sel[0])
+
+
+def UI():
+
+    if cmds.window("stretchyUI", exists=True):
+        cmds.deleteUI("stretchyUI")
+
+    cmds.window("stretchyUI", title="Stretchy Setup", widthHeight=(300,180))
+
+    cmds.columnLayout(adjustableColumn=True, rs=5)
+
+    cmds.text(label="First Joint")
+    cmds.rowLayout(nc=2)
+    cmds.textField("firstJointField")
+    cmds.button(label="Load", c=lambda x: loadFirstJoint())
+    cmds.setParent("..")
+
+    cmds.text(label="Last Joint")
+    cmds.rowLayout(nc=2)
+    cmds.textField("lastJointField")
+    cmds.button(label="Load", c=lambda x: loadLastJoint())
+    cmds.setParent("..")
+
+    cmds.text(label="Curve Transform")
+    cmds.rowLayout(nc=2)
+    cmds.textField("curveField")
+    cmds.button(label="Load", c=lambda x: loadCurve())
+    cmds.setParent("..")
+
+    cmds.text(label="Root_ctrl (optional)")
+    cmds.rowLayout(nc=2)
+    cmds.textField("rootField")
+    cmds.button(label="Load", c=lambda x: loadRoot())
+    cmds.setParent("..")
+
+    cmds.separator(h=10)
+
+    cmds.button(label="Create Stretchy", height=40, c=lambda x: buildStretchy())
+
+    cmds.showWindow()
+
+
+UI()
