@@ -1,3 +1,6 @@
+#aun no funciona, solo tiene la UI, no crea controles. 
+
+
 import maya.cmds as cmds 
 import maya.mel as mel
 
